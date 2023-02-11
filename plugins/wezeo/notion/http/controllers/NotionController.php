@@ -3,44 +3,26 @@ namespace Wezeo\Notion\Http\Controllers;
 
 use Backend\Classes\Controller;
 use October\Rain\Network\Http;
+use Log;
 
 class NotionController extends Controller
 {
     public function index()
     {
-        //TODO: De-Hardcode
-        $res = Http::post("https://api.notion.com/v1/databases/" . getenv('NOTION_DB') . "/query", function ($http) {
-            $taskName = 'applicant-detail* update (save) @be';
-
-            $http->header('Notion-Version', '2022-06-28');
-            $http->header('accept', 'application/json');
-            $http->header('content-type', 'application/json');
-            $http->header('Authorization', 'Bearer ' . getenv('NOTION_INTEGRATION_TOKEN'));
-
-            $body = [
-                "filter" => [
-                    "property" => "Task",
-                    "rich_text" => [
-                        "contains" => $taskName
-                    ]
-                ]
-            ];
-
-            $http->setOption(CURLOPT_POSTFIELDS, json_encode($body));
-        });
+        $res = $this->getFromApi(post('task_name'));
 
         $decodedRes = json_decode($res->body, true);
-        $properties = $decodedRes['results'][0]['properties'];
+        //$properties = $decodedRes['results'][0]['properties'];
 
-        return response($properties)
+        return response($decodedRes)
             ->header('Content-Type', 'application/json');
     }
 
-    public function update()
+    public function create()
     {
-        //TODO: De-Hardcode
         $res = Http::post("https://api.notion.com/v1/pages/", function ($http) {
-            $taskName = 'test task e';
+            $taskName = post('task_name');
+            $categoryName = post('category_name');
 
             $http->header('Notion-Version', '2022-06-28');
             $http->header('accept', 'application/json');
@@ -66,7 +48,7 @@ class NotionController extends Controller
                         "rich_text" => [
                             [
                                 "text" => [
-                                    "content" => "applicant-detail*"
+                                    "content" => $categoryName
                                 ]
                             ]
                         ]
@@ -82,11 +64,16 @@ class NotionController extends Controller
 
     public function delete()
     {
-        //TODO: De-Hardcode
-        $res = Http
-            ::delete("https://api.notion.com/v1/blocks/0a7199579fdf4de09c7ad0f4b3e4140c", function ($http) {
-                $taskName = 'test task';
+        try {
+            $block = $this->getFromApi(post('task_name'));
+            $blockID = json_decode($block->body, true)['results'][0]['id'];
+        } catch(\Exception $e) {
+            return response($e->getMessage())
+                ->header('Content-Type', 'application/json');
+        }
 
+        $res = Http
+            ::delete("https://api.notion.com/v1/blocks/" . $blockID, function ($http) {
                 $http->header('Notion-Version', '2022-06-28');
                 $http->header('accept', 'application/json');
                 $http->header('content-type', 'application/json');
@@ -95,5 +82,35 @@ class NotionController extends Controller
 
         return response($res->body)
             ->header('Content-Type', 'application/json');
+    }
+
+    private function getFromApi($taskName)
+    {
+        $res = Http
+            ::post(
+                "https://api.notion.com/v1/databases/" . getenv('NOTION_DB') . "/query",
+                function ($http) use ($taskName) {
+
+                    Log::info($taskName);
+
+                    $http->header('Notion-Version', '2022-06-28');
+                    $http->header('accept', 'application/json');
+                    $http->header('content-type', 'application/json');
+                    $http->header('Authorization', 'Bearer ' . getenv('NOTION_INTEGRATION_TOKEN'));
+
+                    $body = [
+                        "filter" => [
+                            "property" => "Task",
+                            "rich_text" => [
+                                "contains" => $taskName
+                            ]
+                        ]
+                    ];
+
+                    $http->setOption(CURLOPT_POSTFIELDS, json_encode($body));
+                }
+            );
+
+        return $res;
     }
 }
