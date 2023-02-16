@@ -9,4 +9,6 @@ Route::group(['prefix' => 'notion'], function () {
     Route::post('/find', [NotionController::class, 'index']);
     Route::post('/create', [NotionController::class, 'create']);
     Route::post('/delete', [NotionController::class, 'delete']);
+    Route::post('/user', [NotionController::class, 'user']);
+    Route::post('/update', [NotionController::class, 'update']);
 });
