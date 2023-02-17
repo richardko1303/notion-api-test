@@ -2,7 +2,7 @@
 FROM php:7.4-apache
 
 # Copy the application files into the container
-COPY . 
+COPY . /
 
 # Set the working directory in the container
 WORKDIR .
