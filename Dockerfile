@@ -5,10 +5,22 @@ FROM php:7.4-apache
 COPY . /
 
 # Set the working directory in the container
-WORKDIR .
+WORKDIR /
 
 # Install necessary PHP extensions
-RUN php artisan october:install
+RUN apt-get update && apt-get install -y \
+    libicu-dev \
+    libzip-dev \
+    && docker-php-ext-install \
+    intl \
+    zip \
+    && a2enmod rewrite
+
+# Install composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Install Laravel dependencies
+RUN composer october:install
 
 # Expose port 80
 EXPOSE 80
