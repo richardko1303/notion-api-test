@@ -7,6 +7,18 @@ use Log;
 
 class NotionController extends Controller
 {
+    public function receive()
+    {
+        $url = post('url');
+        $taskName = post('task_name');
+        $assign_id = post('assign_id');
+        $category = post('category');
+        $progress = post('progress');
+        $dateStart = post('date_start');
+
+        // Tu uz mozeme zapisovat do WGridu
+
+    }
     public function index()
     {
         $res = $this->getFromApi(post('task_name'));
